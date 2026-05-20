@@ -1,0 +1,129 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function userDocExists() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function hasRole(role) {
+      return isSignedIn() && userDocExists() && userDoc().role == role;
+    }
+
+    function isShopStaff() {
+      return hasRole('shop_admin') || hasRole('mechanic');
+    }
+
+    function belongsToShop(shopId) {
+      return isSignedIn() && userDocExists() && userDoc().shopId == shopId;
+    }
+
+    function isCustomerOwner(customerId) {
+      return hasRole('customer') && userDoc().customerId == customerId;
+    }
+
+    // Customer self-registration: links their Auth UID to a new customer record
+    function isSelfRegisteringCustomer() {
+      return isSignedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.shopId is string;
+    }
+
+    match /users/{userId} {
+      allow read: if isSignedIn() && (request.auth.uid == userId || isShopStaff());
+      allow create: if isSignedIn()
+        && request.auth.uid == userId
+        && request.resource.data.role in ['shop_admin', 'mechanic', 'customer']
+        && request.resource.data.shopId is string
+        && request.resource.data.email is string
+        && request.resource.data.displayName is string;
+      allow update: if request.auth.uid == userId
+        || (hasRole('shop_admin')
+          && belongsToShop(resource.data.shopId)
+          && request.resource.data.shopId == resource.data.shopId);
+    }
+
+    match /shops/{shopId} {
+      allow read: if belongsToShop(shopId);
+      allow write: if belongsToShop(shopId) && hasRole('shop_admin');
+    }
+
+    match /customers/{customerId} {
+      allow read: if belongsToShop(resource.data.shopId) || isCustomerOwner(customerId);
+      allow create: if (belongsToShop(request.resource.data.shopId) && isShopStaff())
+        || isSelfRegisteringCustomer();
+      allow update: if belongsToShop(resource.data.shopId) && isShopStaff()
+        || (isCustomerOwner(customerId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['vehicleIds', 'updatedAt']));
+      allow delete: if belongsToShop(resource.data.shopId) && isShopStaff();
+    }
+
+    match /vehicles/{vehicleId} {
+      allow read: if belongsToShop(resource.data.shopId) || isCustomerOwner(resource.data.customerId);
+      allow create: if (belongsToShop(request.resource.data.shopId) && isShopStaff())
+        || (isCustomerOwner(request.resource.data.customerId)
+          && request.resource.data.shopId == userDoc().shopId);
+      allow update: if belongsToShop(resource.data.shopId) && isShopStaff()
+        || (isCustomerOwner(resource.data.customerId)
+          && request.resource.data.customerId == resource.data.customerId
+          && request.resource.data.shopId == resource.data.shopId);
+      allow delete: if belongsToShop(resource.data.shopId) && isShopStaff();
+    }
+
+    match /repairOrders/{orderId} {
+      allow read: if belongsToShop(resource.data.shopId) || isCustomerOwner(resource.data.customerId);
+      allow create: if belongsToShop(request.resource.data.shopId) && isShopStaff();
+      allow update: if belongsToShop(resource.data.shopId) && isShopStaff();
+    }
+
+    match /estimates/{estimateId} {
+      allow read: if belongsToShop(resource.data.shopId) || isCustomerOwner(resource.data.customerId);
+      allow create, update: if belongsToShop(request.resource.data.shopId) && isShopStaff();
+      allow update: if isCustomerOwner(resource.data.customerId)
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['approvalStatus', 'customerNotes', 'respondedAt', 'updatedAt']);
+    }
+
+    match /invoices/{invoiceId} {
+      allow read: if belongsToShop(resource.data.shopId) || isCustomerOwner(resource.data.customerId);
+      allow create, update: if belongsToShop(request.resource.data.shopId) && isShopStaff();
+    }
+
+    match /payments/{paymentId} {
+      allow read: if belongsToShop(resource.data.shopId) || isCustomerOwner(resource.data.customerId);
+      allow write: if false;
+    }
+
+    match /appointments/{appointmentId} {
+      allow read: if belongsToShop(resource.data.shopId) || isCustomerOwner(resource.data.customerId);
+      allow create: if belongsToShop(request.resource.data.shopId)
+        && (isShopStaff() || isCustomerOwner(request.resource.data.customerId));
+      allow update, delete: if belongsToShop(resource.data.shopId) && isShopStaff();
+    }
+
+    match /messages/{messageId} {
+      allow read: if belongsToShop(resource.data.shopId) || isCustomerOwner(resource.data.customerId);
+      allow create: if belongsToShop(request.resource.data.shopId)
+        && (isShopStaff() || isCustomerOwner(request.resource.data.customerId));
+      allow update: if belongsToShop(resource.data.shopId) && isShopStaff();
+    }
+
+    match /mediaUploads/{mediaId} {
+      allow read: if belongsToShop(resource.data.shopId)
+        && (isShopStaff() || isCustomerOwner(resource.data.customerId));
+      allow create: if belongsToShop(request.resource.data.shopId)
+        && isShopStaff()
+        && request.resource.data.customerId is string
+        && request.resource.data.repairOrderId is string;
+    }
+  }
+}
