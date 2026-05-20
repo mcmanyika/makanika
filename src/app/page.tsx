@@ -13,9 +13,7 @@ export default function HomePage() {
           <span className="text-xl font-bold">Makanika</span>
         </div>
         <Link href="/login">
-          <Button variant="outline" className="border-slate-600 bg-transparent text-white hover:bg-slate-800">
-            Sign in
-          </Button>
+          <Button variant="outlineDark">Sign in</Button>
         </Link>
       </header>
 
@@ -35,7 +33,7 @@ export default function HomePage() {
             <Button size="lg">Get started</Button>
           </Link>
           <Link href="/signup">
-            <Button size="lg" variant="outline" className="border-slate-600 bg-transparent text-white hover:bg-slate-800">
+            <Button size="lg" variant="outlineDark">
               Create account
             </Button>
           </Link>
