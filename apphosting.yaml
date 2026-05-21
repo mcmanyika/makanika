@@ -1,0 +1,15 @@
+# Firebase App Hosting — set secret values in Firebase Console → App Hosting → your backend → Environment variables
+# (same keys as .env.local). Do not commit API keys or service account JSON here.
+
+runConfig:
+  minInstances: 0
+  maxInstances: 10
+  concurrency: 80
+
+env:
+  - variable: OPENAI_MODEL
+    value: gpt-4o-mini
+    availability:
+      - RUNTIME
+  # Set these in the console (RUNTIME). Names must match .env.example:
+  # OPENAI_API_KEY, FIREBASE_SERVICE_ACCOUNT_JSON, NEXT_PUBLIC_* Firebase/Stripe vars

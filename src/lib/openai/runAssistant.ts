@@ -16,7 +16,9 @@ function getOpenAIClient(): OpenAI {
 
 export class OpenAIConfigError extends Error {
   constructor() {
-    super("OpenAI is not configured. Set OPENAI_API_KEY in .env.local.");
+    super(
+      "OpenAI is not configured. Set OPENAI_API_KEY in .env.local (local) or your hosting environment variables (production)."
+    );
     this.name = "OpenAIConfigError";
   }
 }

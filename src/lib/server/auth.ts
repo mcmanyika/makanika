@@ -41,7 +41,7 @@ export async function verifyRequestAuth(
 
   if (!hasAdminAuthCredentials()) {
     throw new AuthError(
-      "Chat is not configured on the server. Add FIREBASE_SERVICE_ACCOUNT_JSON to your production environment (Firebase App Hosting secret or hosting env vars).",
+      "Chat is not configured on the server. Set FIREBASE_SERVICE_ACCOUNT_JSON in .env.local or your hosting environment variables.",
       503
     );
   }
