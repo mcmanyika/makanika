@@ -22,7 +22,7 @@ export function useChatAssistant() {
 
   const getToken = useCallback(async () => {
     if (!firebaseUser) throw new Error("Please sign in to use the assistant.");
-    return firebaseUser.getIdToken();
+    return firebaseUser.getIdToken(true);
   }, [firebaseUser]);
 
   const sendMessage = useCallback(

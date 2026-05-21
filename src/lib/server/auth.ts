@@ -1,4 +1,8 @@
-import { getAdminAuth, getAdminFirestore } from "@/lib/server/firebase-admin";
+import {
+  getAdminAuth,
+  getAdminFirestore,
+  hasAdminAuthCredentials,
+} from "@/lib/server/firebase-admin";
 import { COLLECTIONS } from "@/lib/firebase/collections";
 import { User, UserRole } from "@/types";
 
@@ -35,11 +39,22 @@ export async function verifyRequestAuth(
     throw new AuthError("Missing authorization token.", 401);
   }
 
+  if (!hasAdminAuthCredentials()) {
+    throw new AuthError(
+      "Chat is not configured on the server. Add FIREBASE_SERVICE_ACCOUNT_JSON to your production environment (Firebase App Hosting secret or hosting env vars).",
+      503
+    );
+  }
+
   let decoded: { uid: string };
   try {
-    decoded = await getAdminAuth().verifyIdToken(token);
-  } catch {
-    throw new AuthError("Invalid or expired session.", 401);
+    decoded = await getAdminAuth().verifyIdToken(token, true);
+  } catch (err) {
+    console.error("[verifyIdToken]", err);
+    throw new AuthError(
+      "Invalid or expired session. Sign out, sign in again, and retry.",
+      401
+    );
   }
 
   const userSnap = await getAdminFirestore()
