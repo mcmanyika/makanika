@@ -10,6 +10,7 @@ import { PageLoader } from "@/components/ui/PageLoader";
 import { FormFeedback } from "@/components/ui/FormFeedback";
 import { useAuth } from "@/contexts/AuthContext";
 import { useShopData } from "@/contexts/ShopDataContext";
+import { AssistantPanel } from "@/components/chat/AssistantPanel";
 import { AppointmentFiltersBar } from "@/components/appointments/AppointmentFiltersBar";
 import type {
   AppointmentDateFilter,
@@ -240,6 +241,12 @@ export default function AppointmentsPage() {
         </div>
 
         <FormFeedback error={error} success={success} />
+
+        <AssistantPanel
+          title="Scheduling assistant"
+          hint="Book or reschedule for customers, check open slots, or list today's appointments."
+          defaultOpen={false}
+        />
 
         {appointments.length > 0 && (
           <AppointmentFiltersBar

@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { AdminHeader } from "@/components/layout/AdminHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { PageLoader } from "@/components/ui/PageLoader";
+import { AssistantPanel } from "@/components/chat/AssistantPanel";
 import { MessageComposer } from "@/components/messages/MessageComposer";
 import { useAuth } from "@/contexts/AuthContext";
 import { useShopData } from "@/contexts/ShopDataContext";
@@ -58,7 +59,13 @@ export default function MessagesPage() {
   return (
     <div>
       <AdminHeader title="Messages" subtitle="Customer communication" />
-      <div className="grid gap-6 p-4 lg:grid-cols-3 sm:p-6">
+      <div className="space-y-4 p-4 sm:p-6">
+        <AssistantPanel
+          title="Scheduling assistant"
+          hint="Help customers book visits or check repair order status while you message."
+          defaultOpen={false}
+        />
+      <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-1">
           <CardHeader>
             <CardTitle>Conversations</CardTitle>
@@ -162,6 +169,7 @@ export default function MessagesPage() {
             />
           </CardContent>
         </Card>
+      </div>
       </div>
     </div>
   );

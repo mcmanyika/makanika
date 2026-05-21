@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { PageLoader } from "@/components/ui/PageLoader";
+import { AssistantPanel } from "@/components/chat/AssistantPanel";
 import { MessageComposer } from "@/components/messages/MessageComposer";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCustomerData } from "@/contexts/CustomerDataContext";
@@ -34,7 +35,13 @@ export default function CustomerMessagesPage() {
         <h1 className="text-2xl font-bold text-slate-900">Messages</h1>
         <p className="text-slate-500">Chat with your service advisor</p>
       </header>
-      <Card className="m-4 sm:m-6">
+      <div className="space-y-4 p-4 sm:p-6">
+        <AssistantPanel
+          title="Assistant"
+          hint="Ask about repair status, appointments, or booking a visit."
+          defaultOpen={false}
+        />
+      <Card>
         <CardHeader>
           <CardTitle>Conversation</CardTitle>
         </CardHeader>
@@ -71,6 +78,7 @@ export default function CustomerMessagesPage() {
           <MessageComposer onSend={handleSend} />
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }

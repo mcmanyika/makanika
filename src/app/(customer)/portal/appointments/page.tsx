@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/Badge";
 import { PageLoader } from "@/components/ui/PageLoader";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCustomerData } from "@/contexts/CustomerDataContext";
+import { AssistantPanel } from "@/components/chat/AssistantPanel";
 import { createAppointment } from "@/lib/firebase/mutations";
 import { formatDateTime } from "@/lib/utils";
 
@@ -115,19 +116,24 @@ export default function CustomerAppointmentsPage() {
         </div>
       </header>
 
-      <div className="space-y-6 p-4 sm:p-6">
-        {success && (
-          <div
-            role="status"
-            className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
-          >
-            {success}
-          </div>
-        )}
+      <div className="p-4 sm:p-6">
+        <div className="grid items-start gap-6 lg:grid-cols-[minmax(280px,360px)_minmax(0,1fr)]">
+          <div className="space-y-4">
+            <h2 className="text-sm font-semibold text-slate-700">
+              Your appointments
+            </h2>
+            {success && (
+              <div
+                role="status"
+                className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
+              >
+                {success}
+              </div>
+            )}
 
-        {showForm && (
-          <div ref={formRef}>
-          <Card>
+            {showForm && (
+              <div ref={formRef}>
+              <Card>
             <CardHeader>
               <CardTitle>Request appointment</CardTitle>
               <p className="text-sm text-slate-500">
@@ -222,53 +228,68 @@ export default function CustomerAppointmentsPage() {
               </form>
             </CardContent>
           </Card>
-          </div>
-        )}
-
-        {sorted.length === 0 ? (
-          <p className="text-slate-500">
-            No appointments scheduled.{" "}
-            {!showForm && (
-              <button
-                type="button"
-                onClick={openForm}
-                className="font-medium text-blue-600 hover:underline"
-              >
-                Book your first appointment
-              </button>
+              </div>
             )}
-          </p>
-        ) : (
-          sorted.map((apt) => (
-            <Card key={apt.id}>
-              <CardContent className="flex items-start justify-between gap-4 pt-6">
-                <div>
-                  <p className="font-semibold text-slate-900">{apt.title}</p>
-                  <p className="text-sm text-slate-500">
-                    {formatDateTime(apt.scheduledAt as Date)} ·{" "}
-                    {apt.durationMinutes} min
-                  </p>
-                  {apt.description && (
-                    <p className="mt-1 text-sm text-slate-600">
-                      {apt.description}
-                    </p>
-                  )}
-                </div>
-                <Badge
-                  variant={
-                    apt.status === "confirmed"
-                      ? "success"
-                      : apt.status === "cancelled"
-                        ? "danger"
-                        : "info"
-                  }
-                >
-                  {apt.status.replace("_", " ")}
-                </Badge>
-              </CardContent>
-            </Card>
-          ))
-        )}
+
+            {sorted.length === 0 ? (
+              <p className="text-sm text-slate-500">
+                No appointments scheduled.{" "}
+                {!showForm && (
+                  <button
+                    type="button"
+                    onClick={openForm}
+                    className="font-medium text-blue-600 hover:underline"
+                  >
+                    Book your first appointment
+                  </button>
+                )}
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {sorted.map((apt) => (
+                  <Card key={apt.id}>
+                    <CardContent className="flex flex-col gap-3 pt-6 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-slate-900">
+                          {apt.title}
+                        </p>
+                        <p className="text-sm text-slate-500">
+                          {formatDateTime(apt.scheduledAt as Date)} ·{" "}
+                          {apt.durationMinutes} min
+                        </p>
+                        {apt.description && (
+                          <p className="mt-1 text-sm text-slate-600">
+                            {apt.description}
+                          </p>
+                        )}
+                      </div>
+                      <Badge
+                        variant={
+                          apt.status === "confirmed"
+                            ? "success"
+                            : apt.status === "cancelled"
+                              ? "danger"
+                              : "info"
+                        }
+                        className="shrink-0 self-start"
+                      >
+                        {apt.status.replace("_", " ")}
+                      </Badge>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="min-w-0 lg:sticky lg:top-4">
+            <AssistantPanel
+              title="Booking assistant"
+              hint="Ask to find open times or book a service — confirm before anything is scheduled."
+              className="lg:min-h-[min(70vh,640px)] lg:flex lg:flex-col"
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

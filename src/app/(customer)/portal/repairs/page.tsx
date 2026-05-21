@@ -6,6 +6,7 @@ import { RepairProgressTracker } from "@/components/ui/RepairProgressTracker";
 import { Badge } from "@/components/ui/Badge";
 import { PageLoader } from "@/components/ui/PageLoader";
 import { MediaGallery } from "@/components/repair/MediaGallery";
+import { AssistantPanel } from "@/components/chat/AssistantPanel";
 import { RepairOrderJobsList } from "@/components/repair/RepairOrderJobsList";
 import { getEffectiveOrderStatus } from "@/lib/repairOrderJobs";
 import { useAuth } from "@/contexts/AuthContext";
@@ -78,6 +79,11 @@ export default function CustomerRepairsPage() {
         </p>
       </header>
       <div className="space-y-6 p-4 sm:p-6">
+        <AssistantPanel
+          title="Repair assistant"
+          hint='Ask "What is the status of RO-…?" or about your active repairs.'
+          defaultOpen={false}
+        />
         {repairOrders.length === 0 ? (
           <p className="text-slate-500">No repair orders.</p>
         ) : (

@@ -10,6 +10,7 @@ export const COLLECTIONS = {
   appointments: "appointments",
   messages: "messages",
   mediaUploads: "mediaUploads",
+  chatPendingActions: "chatPendingActions",
 } as const;
 
 export type CollectionName = (typeof COLLECTIONS)[keyof typeof COLLECTIONS];
