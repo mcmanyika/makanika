@@ -46,7 +46,7 @@ export default function UsersPage() {
 
   useEffect(() => {
     if (!loading && currentUser && !isAdmin) {
-      router.replace("/dashboard");
+      router.replace("/appointments");
     }
   }, [loading, currentUser, isAdmin, router]);
 

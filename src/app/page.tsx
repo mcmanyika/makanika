@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Wrench, Shield, CreditCard, MessageSquare } from "lucide-react";
+import { Calendar, Wrench, Shield, CreditCard, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
 export default function HomePage() {
@@ -22,11 +22,12 @@ export default function HomePage() {
           Auto Repair Shop SaaS
         </p>
         <h1 className="mx-auto max-w-3xl text-4xl font-bold leading-tight sm:text-5xl lg:text-6xl">
-          Run your shop. Delight your customers.
+          Schedule first. Run the rest of your shop with ease.
         </h1>
         <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-300">
-          Repair orders, estimates, invoices, appointments, and customer
-          communication — built for American independent auto repair shops.
+          Online appointment booking and shop scheduling up front — plus repair
+          orders, estimates, invoices, and customer messaging for independent
+          auto repair shops.
         </p>
         <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
           <Link href="/login">
@@ -39,8 +40,13 @@ export default function HomePage() {
           </Link>
         </div>
 
-        <div className="mt-24 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-24 grid gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {[
+            {
+              icon: Calendar,
+              title: "Appointment scheduling",
+              desc: "Customer self-booking and shop calendar",
+            },
             {
               icon: Wrench,
               title: "Repair orders",

@@ -36,13 +36,13 @@ const navItems: {
   icon: typeof LayoutDashboard;
   adminOnly?: boolean;
 }[] = [
+  { href: "/appointments", label: "Appointments", icon: Calendar },
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/customers", label: "Customers", icon: Users },
   { href: "/vehicles", label: "Vehicles", icon: Car },
   { href: "/repair-orders", label: "Repair Orders", icon: Wrench },
   { href: "/estimates", label: "Estimates", icon: FileCheck },
   { href: "/invoices", label: "Invoices", icon: FileText },
-  { href: "/appointments", label: "Appointments", icon: Calendar },
   { href: "/messages", label: "Messages", icon: MessageSquare },
   { href: "/users", label: "Users", icon: UserCog, adminOnly: true },
   { href: "/settings", label: "Settings", icon: Settings },
@@ -70,7 +70,7 @@ function AdminSidebarPanel({
     >
       <div className={cn("border-b border-slate-700 py-5", sidebarBrandPadding(expanded))}>
         <Link
-          href="/dashboard"
+          href="/appointments"
           onClick={onNavigate}
           className="flex items-center overflow-hidden"
         >

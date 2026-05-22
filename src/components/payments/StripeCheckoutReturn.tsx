@@ -57,7 +57,7 @@ export function StripeCheckoutReturn() {
         );
       } finally {
         const path = window.location.pathname.startsWith("/portal")
-          ? "/portal"
+          ? "/portal/appointments"
           : window.location.pathname;
         router.replace(path);
       }

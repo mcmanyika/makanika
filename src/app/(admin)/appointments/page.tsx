@@ -245,7 +245,7 @@ export default function AppointmentsPage() {
         <AssistantPanel
           title="Scheduling assistant"
           hint="Book or reschedule for customers, check open slots, or list today's appointments."
-          defaultOpen={false}
+          defaultOpen
         />
 
         {appointments.length > 0 && (

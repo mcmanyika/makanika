@@ -108,8 +108,13 @@ export default function CustomerAppointmentsPage() {
   return (
     <div>
       <header className="border-b border-slate-200 bg-white px-4 py-6 sm:px-6">
-        <div className="flex items-center justify-between gap-4">
-          <h1 className="text-2xl font-bold text-slate-900">Appointments</h1>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">Appointments</h1>
+            <p className="mt-1 text-sm text-slate-500">
+              Book service visits and manage your schedule
+            </p>
+          </div>
           <Button type="button" onClick={openForm}>
             Book appointment
           </Button>

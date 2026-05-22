@@ -280,5 +280,5 @@ export function useRequireAuth(allowedRoles?: UserRole[]) {
 }
 
 export function getRedirectForRole(role: UserRole): string {
-  return role === "customer" ? "/portal" : "/dashboard";
+  return role === "customer" ? "/portal/appointments" : "/appointments";
 }

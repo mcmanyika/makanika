@@ -5,7 +5,7 @@ Auto repair shop customer management SaaS for the American market. Built with Ne
 ## Features
 
 - **Shop dashboard** — revenue stats, repair orders, customers, vehicles, invoices, appointments, messaging
-- **Customer portal** — track repairs, approve estimates, pay invoices, book appointments
+- **Customer portal** — book appointments first, then track repairs, estimates, and invoices
 - **Role-based auth** — shop admin, mechanic, customer (Firebase Auth)
 - **Stripe** — Checkout sessions and payment links via Cloud Functions (secrets server-side only)
 

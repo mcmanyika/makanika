@@ -29,9 +29,9 @@ export function ProtectedRoute({
 
     if (!allowedRoles.includes(user.role)) {
       if (user.role === "customer") {
-        router.replace("/portal");
+        router.replace("/portal/appointments");
       } else {
-        router.replace("/dashboard");
+        router.replace("/appointments");
       }
     }
   }, [user, loading, allowedRoles, redirectTo, router]);

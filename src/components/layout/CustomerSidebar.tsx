@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Home,
   Car,
   Wrench,
   FileCheck,
@@ -28,13 +27,12 @@ import {
 } from "@/components/layout/sidebarReveal";
 
 const navItems = [
-  { href: "/portal", label: "Home", icon: Home },
-  { href: "/portal/vehicles", label: "My Vehicles", icon: Car },
+  { href: "/portal/appointments", label: "Appointments", icon: Calendar },
   { href: "/portal/repairs", label: "Active Repairs", icon: Wrench },
+  { href: "/portal/vehicles", label: "My Vehicles", icon: Car },
   { href: "/portal/estimates", label: "Estimates", icon: FileCheck },
   { href: "/portal/invoices", label: "Invoices", icon: Receipt },
   { href: "/portal/history", label: "Service History", icon: History },
-  { href: "/portal/appointments", label: "Appointments", icon: Calendar },
   { href: "/portal/messages", label: "Messages", icon: MessageSquare },
 ];
 
@@ -57,7 +55,7 @@ function CustomerSidebarPanel({
     >
       <div className={cn("border-b border-slate-100 py-5", sidebarBrandPadding(expanded))}>
         <Link
-          href="/portal"
+          href="/portal/appointments"
           onClick={onNavigate}
           className="flex items-center overflow-hidden"
         >
@@ -74,8 +72,7 @@ function CustomerSidebarPanel({
       <nav className={cn("flex-1 space-y-1 py-4", sidebarNavPadding(expanded))}>
         {navItems.map(({ href, label, icon: Icon }) => {
           const active =
-            pathname === href ||
-            (href !== "/portal" && pathname.startsWith(href));
+            pathname === href || pathname.startsWith(`${href}/`);
           return (
             <Link
               key={href}

@@ -106,10 +106,76 @@ export default function DashboardPage() {
     <div>
       <AdminHeader
         title="Dashboard"
-        subtitle="Overview of shop performance today"
+        subtitle="Shop overview — manage the schedule on Appointments"
       />
       <div className="space-y-6 p-4 sm:p-6">
+        <Card className="border-blue-200 bg-blue-50/40">
+          <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3">
+            <div>
+              <CardTitle>Today&apos;s appointments</CardTitle>
+              <p className="mt-1 text-sm text-slate-600">
+                {stats.appointmentsToday} scheduled today
+              </p>
+            </div>
+            <Link
+              href="/appointments"
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            >
+              Open schedule
+            </Link>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {todayAppointments.length === 0 ? (
+              <p className="text-sm text-slate-500">
+                No appointments today.{" "}
+                <Link href="/appointments" className="font-medium text-blue-700 hover:underline">
+                  Add one on the schedule
+                </Link>
+                .
+              </p>
+            ) : (
+              todayAppointments.map((apt) => {
+                const customer = getCustomer(apt.customerId);
+                const vehicle = apt.vehicleId
+                  ? getVehicle(apt.vehicleId)
+                  : undefined;
+                return (
+                  <div
+                    key={apt.id}
+                    className="flex items-start justify-between gap-3 border-b border-slate-200/80 pb-3 last:border-0"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-medium text-slate-900">{apt.title}</p>
+                      <p className="text-sm text-slate-500">
+                        {customer
+                          ? `${customer.firstName} ${customer.lastName}`
+                          : "—"}
+                      </p>
+                      {vehicle && (
+                        <p className="text-xs text-slate-400">
+                          {vehicle.year} {vehicle.make} {vehicle.model}
+                        </p>
+                      )}
+                      <Badge variant="info" className="mt-1 text-xs">
+                        {APPOINTMENT_STATUS_LABELS[apt.status]}
+                      </Badge>
+                    </div>
+                    <p className="shrink-0 text-right text-sm text-slate-600">
+                      {formatDateTime(toDate(apt.scheduledAt))}
+                    </p>
+                  </div>
+                );
+              })
+            )}
+          </CardContent>
+        </Card>
+
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <StatCard
+            title="Appointments Today"
+            value={stats.appointmentsToday}
+            icon={Calendar}
+          />
           <StatCard
             title="Total Revenue"
             value={formatCurrency(stats.totalRevenue)}
@@ -125,11 +191,6 @@ export default function DashboardPage() {
             value={stats.outstandingInvoices}
             icon={FileText}
           />
-          <StatCard
-            title="Appointments Today"
-            value={stats.appointmentsToday}
-            icon={Calendar}
-          />
         </div>
 
         <DashboardCharts
@@ -138,76 +199,20 @@ export default function DashboardPage() {
           appointments={appointments}
         />
 
-        <div className="grid gap-6 lg:grid-cols-3">
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle>Recent Repair Orders</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <DataTable
-                columns={orderColumns}
-                data={recentOrders}
-                keyExtractor={(r) => r.id}
-                onRowClick={setDetailOrder}
-                emptyMessage="No repair orders yet"
-              />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Today&apos;s Appointments</CardTitle>
-              <Link
-                href="/appointments"
-                className="text-sm font-medium text-slate-600 hover:text-slate-900 hover:underline"
-              >
-                View all
-              </Link>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {todayAppointments.length === 0 ? (
-                <p className="text-sm text-slate-500">
-                  No scheduled appointments today
-                </p>
-              ) : (
-                todayAppointments.map((apt) => {
-                  const customer = getCustomer(apt.customerId);
-                  const vehicle = apt.vehicleId
-                    ? getVehicle(apt.vehicleId)
-                    : undefined;
-                  return (
-                    <div
-                      key={apt.id}
-                      className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3 last:border-0"
-                    >
-                      <div className="min-w-0">
-                        <p className="font-medium text-slate-900">
-                          {apt.title}
-                        </p>
-                        <p className="text-sm text-slate-500">
-                          {customer
-                            ? `${customer.firstName} ${customer.lastName}`
-                            : "—"}
-                        </p>
-                        {vehicle && (
-                          <p className="text-xs text-slate-400">
-                            {vehicle.year} {vehicle.make} {vehicle.model}
-                          </p>
-                        )}
-                        <Badge variant="info" className="mt-1 text-xs">
-                          {APPOINTMENT_STATUS_LABELS[apt.status]}
-                        </Badge>
-                      </div>
-                      <p className="shrink-0 text-right text-sm text-slate-600">
-                        {formatDateTime(toDate(apt.scheduledAt))}
-                      </p>
-                    </div>
-                  );
-                })
-              )}
-            </CardContent>
-          </Card>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Repair Orders</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <DataTable
+              columns={orderColumns}
+              data={recentOrders}
+              keyExtractor={(r) => r.id}
+              onRowClick={setDetailOrder}
+              emptyMessage="No repair orders yet"
+            />
+          </CardContent>
+        </Card>
       </div>
 
       {detailOrder && (
