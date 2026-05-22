@@ -9,6 +9,12 @@ Auto repair shop customer management SaaS for the American market. Built with Ne
 - **Role-based auth** — shop admin, mechanic, customer (Firebase Auth)
 - **Stripe** — Checkout sessions and payment links via Cloud Functions (secrets server-side only)
 
+## Open in Cursor / VS Code
+
+Open **this folder** (`makanika`), not `Documents` or `dapp`, so Git uses the correct repo and `origin` on GitHub.
+
+Alternatively, open `../makanika.code-workspace` from the `dapp` folder (File → Open Workspace from File).
+
 ## Quick start
 
 ```bash

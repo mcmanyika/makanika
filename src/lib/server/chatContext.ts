@@ -1,4 +1,5 @@
 import { COLLECTIONS } from "@/lib/firebase/collections";
+import { SHOP_CLOSED_DAY_LABEL, SHOP_HOURS_LABEL } from "@/lib/shopSchedule";
 import {
   getEffectiveOrderStatus,
   getRepairOrderJobs,
@@ -95,7 +96,7 @@ export async function buildSystemContext(user: User): Promise<string> {
     `Shop: ${shop.name}`,
     `Phone: ${shop.phone}`,
     `Timezone: ${shop.timezone}`,
-    `Business hours: Monday–Friday, 8:00 AM – 5:00 PM (shop local time).`,
+    `Business hours: ${SHOP_HOURS_LABEL}. Closed ${SHOP_CLOSED_DAY_LABEL}.`,
     `User role: ${user.role}`,
     `User name: ${user.displayName}`,
   ];

@@ -57,7 +57,7 @@ export const ASSISTANT_TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
     function: {
       name: "suggest_available_slots",
       description:
-        "REQUIRED before booking. Returns real open times with ISO timestamps. Never invent times; only offer slots from this tool.",
+        "REQUIRED before booking. Returns real open times (Mon–Sat, 8am–5pm) with ISO timestamps. Never invent times; only offer slots from this tool.",
       parameters: {
         type: "object",
         properties: {

@@ -4,6 +4,11 @@ import {
   findAppointmentConflicts,
 } from "@/lib/appointmentConflicts";
 import { COLLECTIONS } from "@/lib/firebase/collections";
+import {
+  BUSINESS_HOUR_END,
+  BUSINESS_HOUR_START,
+  isShopOpenDay,
+} from "@/lib/shopSchedule";
 import { getAdminFirestore } from "@/lib/server/firebase-admin";
 import {
   Appointment,
@@ -13,8 +18,6 @@ import {
 
 const SLOT_STEP_MINUTES = 30;
 const DEFAULT_DURATION = 60;
-const BUSINESS_HOUR_START = 8;
-const BUSINESS_HOUR_END = 17;
 
 function mapAppointment(
   id: string,
@@ -76,7 +79,7 @@ export async function suggestAvailableSlots(
 
   while (cursor < options.to && results.length < maxResults) {
     const day = cursor.getDay();
-    if (day >= 1 && day <= 5) {
+    if (isShopOpenDay(day)) {
       const hour = cursor.getHours();
       if (hour >= BUSINESS_HOUR_START && hour < BUSINESS_HOUR_END) {
         const endHour =

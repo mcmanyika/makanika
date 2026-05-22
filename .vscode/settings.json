@@ -1,4 +1,6 @@
 {
   "git.openRepositoryInParentFolders": "never",
-  "git.ignoreParentRepositories": true
+  "git.ignoreParentRepositories": true,
+  "git.autoRepositoryDetection": "subFolders",
+  "git.repositoryScanMaxDepth": 2
 }

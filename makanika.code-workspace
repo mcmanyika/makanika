@@ -1,0 +1,12 @@
+{
+  "folders": [
+    {
+      "path": "."
+    }
+  ],
+  "settings": {
+    "git.openRepositoryInParentFolders": "never",
+    "git.ignoreParentRepositories": true,
+    "git.autoRepositoryDetection": "subFolders"
+  }
+}

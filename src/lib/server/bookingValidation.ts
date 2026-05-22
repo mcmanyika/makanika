@@ -1,27 +1,18 @@
-import {
-  assertNoAppointmentConflict,
-} from "@/lib/appointmentConflicts";
+import { assertNoAppointmentConflict } from "@/lib/appointmentConflicts";
 import { COLLECTIONS } from "@/lib/firebase/collections";
 import { listAppointmentsForShop } from "@/lib/server/appointmentService";
 import { getAdminFirestore } from "@/lib/server/firebase-admin";
-
-const BUSINESS_HOUR_START = 8;
-const BUSINESS_HOUR_END = 17;
+import {
+  isShopOpenDay,
+  isWithinBusinessHours,
+  SHOP_CLOSED_DAY_LABEL,
+  SHOP_HOURS_LABEL,
+} from "@/lib/shopSchedule";
 
 export interface SlotValidationResult {
   ok: boolean;
   error?: string;
   scheduledAt?: Date;
-}
-
-function isWithinBusinessHours(start: Date, durationMinutes: number): boolean {
-  const day = start.getDay();
-  if (day < 1 || day > 5) return false;
-  if (start.getHours() < BUSINESS_HOUR_START) return false;
-  const end = new Date(start.getTime() + durationMinutes * 60 * 1000);
-  if (end.getHours() > BUSINESS_HOUR_END) return false;
-  if (end.getHours() === BUSINESS_HOUR_END && end.getMinutes() > 0) return false;
-  return true;
 }
 
 export async function validateBookableSlot(
@@ -40,13 +31,23 @@ export async function validateBookableSlot(
   }
 
   if (when <= new Date()) {
-    return { ok: false, error: "That time is in the past. Call suggest_available_slots for open times." };
+    return {
+      ok: false,
+      error: "That time is in the past. Call suggest_available_slots for open times.",
+    };
+  }
+
+  if (!isShopOpenDay(when.getDay())) {
+    return {
+      ok: false,
+      error: `We are closed on ${SHOP_CLOSED_DAY_LABEL}. Shop hours: ${SHOP_HOURS_LABEL}.`,
+    };
   }
 
   if (!isWithinBusinessHours(when, durationMinutes)) {
     return {
       ok: false,
-      error: "Shop hours are Monday–Friday, 8:00 AM – 5:00 PM. Pick a slot from suggest_available_slots.",
+      error: `Outside shop hours (${SHOP_HOURS_LABEL}). Pick a slot from suggest_available_slots.`,
     };
   }
 
