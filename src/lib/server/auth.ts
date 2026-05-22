@@ -1,8 +1,4 @@
-import {
-  getAdminAuth,
-  getAdminFirestore,
-  hasAdminAuthCredentials,
-} from "@/lib/server/firebase-admin";
+import { getAdminAuth, getAdminFirestore } from "@/lib/server/firebase-admin";
 import { COLLECTIONS } from "@/lib/firebase/collections";
 import { User, UserRole } from "@/types";
 
@@ -39,18 +35,22 @@ export async function verifyRequestAuth(
     throw new AuthError("Missing authorization token.", 401);
   }
 
-  if (!hasAdminAuthCredentials()) {
-    throw new AuthError(
-      "Chat is not configured on the server. Set FIREBASE_SERVICE_ACCOUNT_JSON in .env.local or your hosting environment variables.",
-      503
-    );
-  }
-
   let decoded: { uid: string };
   try {
     decoded = await getAdminAuth().verifyIdToken(token, true);
   } catch (err) {
     console.error("[verifyIdToken]", err);
+    const message =
+      err instanceof Error ? err.message : String(err);
+    if (
+      message.includes("Firebase Admin not configured") ||
+      message.includes("FIREBASE_SERVICE_ACCOUNT_JSON is set but")
+    ) {
+      throw new AuthError(
+        "Chat is not configured on the server. On Firebase App Hosting this usually works automatically after redeploy. Otherwise set FIREBASE_SERVICE_ACCOUNT_JSON in environment variables.",
+        503
+      );
+    }
     throw new AuthError(
       "Invalid or expired session. Sign out, sign in again, and retry.",
       401

@@ -11,5 +11,6 @@ env:
     value: gpt-4o-mini
     availability:
       - RUNTIME
-  # Set these in the console (RUNTIME). Names must match .env.example:
-  # OPENAI_API_KEY, FIREBASE_SERVICE_ACCOUNT_JSON, NEXT_PUBLIC_* Firebase/Stripe vars
+  # Set in Firebase Console → App Hosting → Environment (RUNTIME):
+  # OPENAI_API_KEY, NEXT_PUBLIC_* vars
+  # FIREBASE_SERVICE_ACCOUNT_JSON is optional on App Hosting (FIREBASE_CONFIG + ADC is used)

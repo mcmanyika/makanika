@@ -115,14 +115,16 @@ export async function buildSystemContext(user: User): Promise<string> {
       })
       .slice(0, 10);
 
-    lines.push(`Customer ID for bookings: ${user.customerId}`);
+    lines.push(`Customer ID for bookings (use exactly): ${user.customerId}`);
     if (vehicles.length) {
       lines.push(
-        "Vehicles: " +
+        "Vehicles (use vehicleId exactly, or omit): " +
           vehicles
             .map((v) => `${v.id}: ${v.year} ${v.make} ${v.model}`)
             .join("; ")
       );
+    } else {
+      lines.push("Vehicles: none on file — omit vehicleId when booking.");
     }
     if (upcoming.length) {
       lines.push(
@@ -149,9 +151,13 @@ export async function buildSystemContext(user: User): Promise<string> {
     }
   } else if (isShopStaff(user.role)) {
     lines.push(
-      "You can book appointments for customers. Use find_customer_by_name when the user names a customer, then book_appointment with that customerId."
+      "Staff booking: always find_customer_by_name before book_appointment. Never invent customerId."
     );
   }
+
+  lines.push(
+    "Scheduling: call suggest_available_slots before book_appointment or reschedule_appointment."
+  );
 
   return lines.join("\n");
 }

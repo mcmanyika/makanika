@@ -8,6 +8,11 @@ import {
   listAppointmentsForShop,
   suggestAvailableSlots,
 } from "@/lib/server/appointmentService";
+import {
+  validateBookableSlot,
+  validateCustomerForShop,
+  validateVehicleForCustomer,
+} from "@/lib/server/bookingValidation";
 import { getRepairOrderSummary } from "@/lib/server/chatContext";
 import { isShopStaff } from "@/lib/server/auth";
 import { getAdminFirestore } from "@/lib/server/firebase-admin";
@@ -51,7 +56,8 @@ export const ASSISTANT_TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
     type: "function",
     function: {
       name: "suggest_available_slots",
-      description: "Find open appointment slots. Use before booking.",
+      description:
+        "REQUIRED before booking. Returns real open times with ISO timestamps. Never invent times; only offer slots from this tool.",
       parameters: {
         type: "object",
         properties: {
@@ -105,7 +111,7 @@ export const ASSISTANT_TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
     function: {
       name: "book_appointment",
       description:
-        "Propose booking an appointment. Does NOT confirm until user approves. Requires customerId for staff bookings.",
+        "Propose a booking after suggest_available_slots. Pass scheduledAt exactly as returned by that tool. Does NOT book until user taps Confirm. Staff must use find_customer_by_name first.",
       parameters: {
         type: "object",
         properties: {
@@ -125,7 +131,8 @@ export const ASSISTANT_TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
     type: "function",
     function: {
       name: "reschedule_appointment",
-      description: "Propose rescheduling an existing appointment. Requires user confirmation.",
+      description:
+        "Propose reschedule after suggest_available_slots. Use appointmentId from list_my_appointments. scheduledAt must be an ISO from suggest_available_slots.",
       parameters: {
         type: "object",
         properties: {
@@ -230,11 +237,17 @@ export async function runTool(
         from,
         to,
         durationMinutes,
-        maxResults: 10,
+        maxResults: 12,
       });
       return {
         content: slots.length
-          ? slots.map((s) => `${s.label} (${s.scheduledAt})`).join("\n")
+          ? [
+              "Available slots (use scheduledAt exactly when booking):",
+              ...slots.map(
+                (s, i) =>
+                  `${i + 1}. ${s.label} | scheduledAt=${s.scheduledAt}`
+              ),
+            ].join("\n")
           : "No open slots found in that range. Try different days or shorter duration.",
       };
     }
@@ -305,21 +318,53 @@ export async function runTool(
       if (!customerId) {
         return {
           content:
-            "customerId is required. Use find_customer_by_name for staff, or book for the logged-in customer.",
+            "ERROR: customerId is required. Staff: call find_customer_by_name first. Customer: booking uses your account automatically.",
         };
       }
+
+      const customerCheck = await validateCustomerForShop(shopId, customerId);
+      if (!customerCheck.ok) {
+        return { content: `ERROR: ${customerCheck.error}` };
+      }
+
+      const durationMinutes = Number(args.durationMinutes) || 60;
+      const scheduledAt = String(args.scheduledAt ?? "").trim();
+      if (!scheduledAt) {
+        return {
+          content:
+            "ERROR: scheduledAt is required. Call suggest_available_slots and use an ISO from its output.",
+        };
+      }
+
+      const slotCheck = await validateBookableSlot(
+        shopId,
+        scheduledAt,
+        durationMinutes
+      );
+      if (!slotCheck.ok) {
+        return { content: `ERROR: ${slotCheck.error}` };
+      }
+
+      const vehicleId = args.vehicleId as string | undefined;
+      if (vehicleId) {
+        const vehicleCheck = await validateVehicleForCustomer(
+          shopId,
+          customerId,
+          vehicleId
+        );
+        if (!vehicleCheck.ok) {
+          return { content: `ERROR: ${vehicleCheck.error}` };
+        }
+      }
+
       const payload: BookAppointmentPayload = {
         customerId,
-        title: String(args.title ?? "Service appointment"),
-        scheduledAt: String(args.scheduledAt),
-        durationMinutes: args.durationMinutes as number | undefined,
-        vehicleId: args.vehicleId as string | undefined,
+        title: String(args.title ?? "Service appointment").trim(),
+        scheduledAt: slotCheck.scheduledAt!.toISOString(),
+        durationMinutes,
+        vehicleId,
         description: args.description as string | undefined,
       };
-      const when = new Date(payload.scheduledAt);
-      if (Number.isNaN(when.getTime()) || when < new Date()) {
-        return { content: "Invalid or past scheduledAt. Use suggest_available_slots." };
-      }
       const summary = formatPendingSummary("book_appointment", payload);
       const id = await savePendingAction(
         uid,
@@ -329,7 +374,7 @@ export async function runTool(
         summary
       );
       return {
-        content: `Proposed booking ready for customer confirmation: ${summary}. Tell the user to tap Confirm to book.`,
+        content: `PROPOSAL_CREATED (not booked yet): ${summary}. User must tap Confirm in the app. Do not say the appointment is booked.`,
         pendingActionId: id,
         pendingSummary: summary,
         pendingActionType: "book_appointment",
@@ -349,13 +394,25 @@ export async function runTool(
       ) {
         return { content: "You can only reschedule your own appointments." };
       }
+      const durationMinutes =
+        (args.durationMinutes as number | undefined) ?? existing.durationMinutes;
+      const scheduledAt = String(args.scheduledAt ?? "").trim();
+      const slotCheck = await validateBookableSlot(
+        shopId,
+        scheduledAt,
+        durationMinutes,
+        { excludeAppointmentId: appointmentId }
+      );
+      if (!slotCheck.ok) {
+        return { content: `ERROR: ${slotCheck.error}` };
+      }
+
       const payload: RescheduleAppointmentPayload = {
         appointmentId,
         customerId: existing.customerId,
         title: String(args.title ?? existing.title),
-        scheduledAt: String(args.scheduledAt),
-        durationMinutes:
-          (args.durationMinutes as number | undefined) ?? existing.durationMinutes,
+        scheduledAt: slotCheck.scheduledAt!.toISOString(),
+        durationMinutes,
         vehicleId: (args.vehicleId as string | undefined) ?? existing.vehicleId,
         description:
           (args.description as string | undefined) ?? existing.description,
@@ -370,7 +427,7 @@ export async function runTool(
         summary
       );
       return {
-        content: `Proposed reschedule ready: ${summary}. User must Confirm.`,
+        content: `PROPOSAL_CREATED (not rescheduled yet): ${summary}. User must tap Confirm. Do not say it is already rescheduled.`,
         pendingActionId: id,
         pendingSummary: summary,
         pendingActionType: "reschedule_appointment",

@@ -1,5 +1,10 @@
 import OpenAI from "openai";
 import { buildSystemContext } from "@/lib/server/chatContext";
+import {
+  buildAssistantSystemPrompt,
+  buildPendingConfirmMessage,
+  sanitizeAssistantReply,
+} from "@/lib/openai/systemPrompt";
 import { runTool, toolsForUser } from "@/lib/openai/tools";
 import type { ChatMessageInput } from "@/lib/openai/types";
 import { User } from "@/types";
@@ -40,19 +45,11 @@ export async function runAssistant(
   const client = getOpenAIClient();
   const model = process.env.OPENAI_MODEL?.trim() || "gpt-4o-mini";
   const context = await buildSystemContext(user);
+  const nowIso = new Date().toISOString();
 
   const systemMessage: OpenAI.Chat.Completions.ChatCompletionMessageParam = {
     role: "system",
-    content: `You are Makanika Shop Assistant — helpful, concise, professional. You help with appointments, repair order status, and scheduling.
-
-Rules:
-- Use tools for real data; never invent appointment times or repair statuses.
-- For booking or rescheduling, always use book_appointment or reschedule_appointment tools; tell the user to tap Confirm when a proposal is ready.
-- Suggest available slots before booking when the user has not picked a specific time.
-- Shop staff must provide or look up customerId before booking for a customer.
-
-Context:
-${context}`,
+    content: buildAssistantSystemPrompt(context, nowIso),
   };
 
   const conversation: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
@@ -72,6 +69,8 @@ ${context}`,
       messages: conversation,
       tools: tools.length ? tools : undefined,
       tool_choice: tools.length ? "auto" : undefined,
+      temperature: 0.2,
+      parallel_tool_calls: false,
     });
 
     const choice = completion.choices[0]?.message;
@@ -112,9 +111,23 @@ ${context}`,
       continue;
     }
 
-    const text = choice.content?.trim();
+    if (pendingAction) {
+      return {
+        message: buildPendingConfirmMessage(pendingAction.summary),
+        pendingAction,
+      };
+    }
+
+    const text = sanitizeAssistantReply(
+      choice.content?.trim() || "How can I help you today?",
+      false
+    );
+    return { message: text, pendingAction };
+  }
+
+  if (pendingAction) {
     return {
-      message: text || "How can I help you today?",
+      message: buildPendingConfirmMessage(pendingAction.summary),
       pendingAction,
     };
   }

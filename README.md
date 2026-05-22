@@ -51,7 +51,7 @@ Local: add these to `.env.local` (see `.env.example`). Never use `NEXT_PUBLIC_` 
 |----------|---------|
 | `OPENAI_API_KEY` | Booking assistant (`/api/chat`) |
 | `OPENAI_MODEL` | Optional; default `gpt-4o-mini` |
-| `FIREBASE_SERVICE_ACCOUNT_JSON` | Verifies Firebase ID tokens on `/api/chat` |
+| `FIREBASE_SERVICE_ACCOUNT_JSON` | Local / non–App Hosting: verifies tokens on `/api/chat`. **Optional on Firebase App Hosting** (uses `FIREBASE_CONFIG` automatically). |
 | `STRIPE_SECRET_KEY` | Cloud Functions (not the Next.js app) |
 
 Production (Firebase App Hosting or your host): set the **same variable names** in the backend **Environment variables** UI. `apphosting.yaml` only pins `OPENAI_MODEL`; add `OPENAI_API_KEY` and `FIREBASE_SERVICE_ACCOUNT_JSON` in the console.

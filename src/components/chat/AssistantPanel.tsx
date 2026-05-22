@@ -15,7 +15,7 @@ interface AssistantPanelProps {
 
 export function AssistantPanel({
   title = "Shop assistant",
-  hint = "Ask about appointments, repair status, or booking a visit.",
+  hint = "Bookings use real open slots only. You'll confirm before anything is scheduled.",
   className,
   defaultOpen = true,
 }: AssistantPanelProps) {
@@ -103,9 +103,14 @@ export function AssistantPanel({
 
           {pendingAction && (
             <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 p-3">
-              <p className="text-sm font-medium text-amber-900">Confirm action</p>
+              <p className="text-sm font-medium text-amber-900">
+                Review before booking
+              </p>
               <p className="mt-1 text-sm text-amber-800">
                 {pendingAction.summary}
+              </p>
+              <p className="mt-1 text-xs text-amber-700">
+                Nothing is scheduled until you tap Confirm.
               </p>
               <div className="mt-3 flex gap-2">
                 <Button
