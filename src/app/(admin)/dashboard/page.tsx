@@ -195,6 +195,7 @@ export default function DashboardPage() {
 
         <DashboardCharts
           payments={payments}
+          invoices={invoices}
           repairOrders={repairOrders}
           appointments={appointments}
         />

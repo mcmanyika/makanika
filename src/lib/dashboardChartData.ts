@@ -1,6 +1,8 @@
+import { getRevenueEntries } from "@/lib/revenue";
 import { REPAIR_STATUS_LABELS, toDate } from "@/lib/utils";
 import {
   Appointment,
+  Invoice,
   Payment,
   RepairOrder,
   RepairOrderStatus,
@@ -45,9 +47,10 @@ function formatMonthLabel(key: string): string {
   }).format(new Date(y, m - 1, 1));
 }
 
-/** Last N calendar months of Stripe revenue (succeeded payments). */
+/** Last N calendar months of collected revenue (payments + paid invoices). */
 export function buildMonthlyRevenue(
   payments: Payment[],
+  invoices: Invoice[],
   months = 6,
   now: Date = new Date()
 ): MonthlyRevenuePoint[] {
@@ -59,11 +62,10 @@ export function buildMonthlyRevenue(
 
   const totals = new Map<string, number>(keys.map((k) => [k, 0]));
 
-  for (const payment of payments) {
-    if (payment.status !== "succeeded") continue;
-    const key = monthKey(toDate(payment.createdAt));
+  for (const entry of getRevenueEntries(payments, invoices)) {
+    const key = monthKey(entry.date);
     if (totals.has(key)) {
-      totals.set(key, (totals.get(key) ?? 0) + payment.amount);
+      totals.set(key, (totals.get(key) ?? 0) + entry.amount);
     }
   }
 

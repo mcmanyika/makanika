@@ -22,10 +22,11 @@ import {
   buildWeeklyAppointments,
 } from "@/lib/dashboardChartData";
 import { formatCurrency } from "@/lib/utils";
-import { Appointment, Payment, RepairOrder } from "@/types";
+import { Appointment, Invoice, Payment, RepairOrder } from "@/types";
 
 interface DashboardChartsProps {
   payments: Payment[];
+  invoices: Invoice[];
   repairOrders: RepairOrder[];
   appointments: Appointment[];
 }
@@ -41,10 +42,11 @@ function formatTooltipValue(
 
 export function DashboardCharts({
   payments,
+  invoices,
   repairOrders,
   appointments,
 }: DashboardChartsProps) {
-  const revenueData = buildMonthlyRevenue(payments);
+  const revenueData = buildMonthlyRevenue(payments, invoices);
   const statusData = buildRepairOrderStatusBreakdown(repairOrders);
   const appointmentData = buildWeeklyAppointments(appointments);
 
@@ -57,7 +59,9 @@ export function DashboardCharts({
       <Card className="xl:col-span-2">
         <CardHeader>
           <CardTitle className="text-base">Revenue (last 6 months)</CardTitle>
-          <p className="text-sm text-slate-500">Successful Stripe payments</p>
+          <p className="text-sm text-slate-500">
+            Stripe payments and paid invoices
+          </p>
         </CardHeader>
         <CardContent>
           {!hasRevenue ? (

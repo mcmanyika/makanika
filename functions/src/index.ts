@@ -94,22 +94,56 @@ async function getInvoice(invoiceId: string): Promise<InvoiceDoc & { id: string 
   return { id: snap.id, ...(snap.data() as InvoiceDoc) };
 }
 
-async function recordCheckoutPayment(session: Stripe.Checkout.Session) {
-  const invoiceId = session.metadata?.invoiceId;
-  if (!invoiceId) return;
+function stripeResourceId(
+  value: string | { id: string } | null | undefined
+): string | undefined {
+  if (!value) return undefined;
+  return typeof value === "string" ? value : value.id;
+}
 
-  const invoiceRef = db.collection("invoices").doc(invoiceId);
+async function paymentAlreadyRecorded(params: {
+  stripeCheckoutSessionId?: string;
+  stripePaymentIntentId?: string;
+}): Promise<boolean> {
+  if (params.stripeCheckoutSessionId) {
+    const bySession = await db
+      .collection("payments")
+      .where("stripeCheckoutSessionId", "==", params.stripeCheckoutSessionId)
+      .limit(1)
+      .get();
+    if (!bySession.empty) return true;
+  }
+  if (params.stripePaymentIntentId) {
+    const byIntent = await db
+      .collection("payments")
+      .where("stripePaymentIntentId", "==", params.stripePaymentIntentId)
+      .limit(1)
+      .get();
+    if (!byIntent.empty) return true;
+  }
+  return false;
+}
+
+async function recordStripePayment(params: {
+  invoiceId: string;
+  amount: number;
+  currency: string;
+  shopId?: string;
+  customerId?: string;
+  stripeCheckoutSessionId?: string;
+  stripePaymentIntentId?: string;
+}) {
+  const invoiceRef = db.collection("invoices").doc(params.invoiceId);
   const invoiceSnap = await invoiceRef.get();
   if (!invoiceSnap.exists) return;
 
   const invoiceData = invoiceSnap.data() as InvoiceDoc;
-  const amount = (session.amount_total ?? 0) / 100;
-  const shopId = session.metadata?.shopId ?? invoiceData.shopId;
-  const customerId = session.metadata?.customerId ?? invoiceData.customerId;
+  const shopId = params.shopId ?? invoiceData.shopId;
+  const customerId = params.customerId ?? invoiceData.customerId;
 
   await invoiceRef.update({
     status: "paid",
-    amountPaid: invoiceData.total ?? amount,
+    amountPaid: invoiceData.total ?? params.amount,
     paidAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
   });
@@ -121,7 +155,7 @@ async function recordCheckoutPayment(session: Stripe.Checkout.Session) {
       const ro = roSnap.data();
       const terminal = ["completed", "ready_for_pickup"];
       await roRef.update({
-        invoiceId,
+        invoiceId: params.invoiceId,
         ...(terminal.includes(ro?.status as string)
           ? {}
           : {
@@ -133,26 +167,44 @@ async function recordCheckoutPayment(session: Stripe.Checkout.Session) {
     }
   }
 
-  const existing = await db
-    .collection("payments")
-    .where("stripeCheckoutSessionId", "==", session.id)
-    .limit(1)
-    .get();
+  const alreadyRecorded = await paymentAlreadyRecorded({
+    stripeCheckoutSessionId: params.stripeCheckoutSessionId,
+    stripePaymentIntentId: params.stripePaymentIntentId,
+  });
 
-  if (existing.empty) {
-    await db.collection("payments").add({
-      shopId,
-      invoiceId,
-      customerId,
-      amount,
-      currency: session.currency ?? "usd",
-      status: "succeeded",
-      stripeCheckoutSessionId: session.id,
-      stripePaymentIntentId: session.payment_intent,
-      createdAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp(),
-    });
-  }
+  if (alreadyRecorded) return;
+
+  await db.collection("payments").add({
+    shopId,
+    invoiceId: params.invoiceId,
+    customerId,
+    amount: params.amount,
+    currency: params.currency,
+    status: "succeeded",
+    ...(params.stripeCheckoutSessionId
+      ? { stripeCheckoutSessionId: params.stripeCheckoutSessionId }
+      : {}),
+    ...(params.stripePaymentIntentId
+      ? { stripePaymentIntentId: params.stripePaymentIntentId }
+      : {}),
+    createdAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+}
+
+async function recordCheckoutPayment(session: Stripe.Checkout.Session) {
+  const invoiceId = session.metadata?.invoiceId;
+  if (!invoiceId) return;
+
+  await recordStripePayment({
+    invoiceId,
+    amount: (session.amount_total ?? 0) / 100,
+    currency: session.currency ?? "usd",
+    shopId: session.metadata?.shopId,
+    customerId: session.metadata?.customerId,
+    stripeCheckoutSessionId: session.id,
+    stripePaymentIntentId: stripeResourceId(session.payment_intent),
+  });
 }
 
 export const createStripeCheckoutSession = functions.https.onCall(
@@ -340,9 +392,13 @@ export const stripeWebhook = functions.https.onRequest(async (req, res) => {
     const intent = event.data.object as Stripe.PaymentIntent;
     const invoiceId = intent.metadata?.invoiceId;
     if (invoiceId) {
-      await db.collection("invoices").doc(invoiceId).update({
-        status: "paid",
-        updatedAt: FieldValue.serverTimestamp(),
+      await recordStripePayment({
+        invoiceId,
+        amount: (intent.amount_received ?? intent.amount ?? 0) / 100,
+        currency: intent.currency ?? "usd",
+        shopId: intent.metadata?.shopId,
+        customerId: intent.metadata?.customerId,
+        stripePaymentIntentId: intent.id,
       });
     }
   }

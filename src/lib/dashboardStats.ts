@@ -1,3 +1,4 @@
+import { getRevenueEntries, sumRevenue } from "@/lib/revenue";
 import { toDate } from "@/lib/utils";
 import {
   Appointment,
@@ -63,12 +64,12 @@ export function computeDashboardStats(
 ) {
   const today = new Date();
 
-  const succeededPayments = payments.filter((p) => p.status === "succeeded");
-  const totalRevenue = succeededPayments.reduce((sum, p) => sum + p.amount, 0);
+  const revenueEntries = getRevenueEntries(payments, invoices);
+  const totalRevenue = sumRevenue(revenueEntries);
 
   return {
     totalRevenue,
-    stripePaymentCount: succeededPayments.length,
+    stripePaymentCount: revenueEntries.length,
     openRepairOrders: repairOrders.filter((r) =>
       OPEN_REPAIR_STATUSES.includes(r.status)
     ).length,
