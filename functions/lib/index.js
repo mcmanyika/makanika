@@ -50,6 +50,15 @@ function getStripe() {
     }
     return new stripe_1.default(secretKey, { apiVersion: "2025-02-24.acacia" });
 }
+/** Public site URL for Stripe Checkout redirects (set APP_URL on deployed functions). */
+function getAppUrl() {
+    var _a;
+    const raw = (_a = process.env.APP_URL) === null || _a === void 0 ? void 0 : _a.trim();
+    if (raw)
+        return raw.replace(/\/$/, "");
+    functions.logger.warn("APP_URL is not set; Stripe Checkout will redirect to http://localhost:3000");
+    return "http://localhost:3000";
+}
 async function getInvoice(invoiceId) {
     const snap = await db.collection("invoices").doc(invoiceId).get();
     if (!snap.exists) {
@@ -111,7 +120,6 @@ async function recordCheckoutPayment(session) {
     }
 }
 exports.createStripeCheckoutSession = functions.https.onCall(async (request) => {
-    var _a;
     if (!request.auth) {
         throw new functions.https.HttpsError("unauthenticated", "Sign in required");
     }
@@ -124,7 +132,7 @@ exports.createStripeCheckoutSession = functions.https.onCall(async (request) => 
         throw new functions.https.HttpsError("permission-denied", "Invoice shop mismatch");
     }
     const stripe = getStripe();
-    const appUrl = (_a = process.env.APP_URL) !== null && _a !== void 0 ? _a : "http://localhost:3000";
+    const appUrl = getAppUrl();
     const session = await stripe.checkout.sessions.create({
         mode: "payment",
         payment_method_types: ["card"],
@@ -146,7 +154,7 @@ exports.createStripeCheckoutSession = functions.https.onCall(async (request) => 
             shopId,
             customerId: invoice.customerId,
         },
-        success_url: `${appUrl}/portal?paid=1&session_id={CHECKOUT_SESSION_ID}`,
+        success_url: `${appUrl}/portal/invoices?paid=1&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${appUrl}/portal/invoices?cancelled=1`,
     });
     await db.collection("invoices").doc(invoiceId).update({

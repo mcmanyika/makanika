@@ -56,9 +56,11 @@ export function StripeCheckoutReturn() {
             : "Could not confirm payment. It may still process shortly."
         );
       } finally {
-        const path = window.location.pathname.startsWith("/portal")
-          ? "/portal/appointments"
-          : window.location.pathname;
+        const path = window.location.pathname.startsWith("/portal/invoices")
+          ? "/portal/invoices"
+          : window.location.pathname.startsWith("/portal")
+            ? "/portal/appointments"
+            : window.location.pathname;
         router.replace(path);
       }
     })();

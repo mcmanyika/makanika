@@ -18,6 +18,16 @@ function getStripe(): Stripe {
   return new Stripe(secretKey, { apiVersion: "2025-02-24.acacia" });
 }
 
+/** Public site URL for Stripe Checkout redirects (set APP_URL on deployed functions). */
+function getAppUrl(): string {
+  const raw = process.env.APP_URL?.trim();
+  if (raw) return raw.replace(/\/$/, "");
+  functions.logger.warn(
+    "APP_URL is not set; Stripe Checkout will redirect to http://localhost:3000"
+  );
+  return "http://localhost:3000";
+}
+
 interface InvoiceDoc {
   shopId: string;
   customerId: string;
@@ -117,7 +127,7 @@ export const createStripeCheckoutSession = functions.https.onCall(
     }
 
     const stripe = getStripe();
-    const appUrl = process.env.APP_URL ?? "http://localhost:3000";
+    const appUrl = getAppUrl();
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
@@ -140,7 +150,7 @@ export const createStripeCheckoutSession = functions.https.onCall(
         shopId,
         customerId: invoice.customerId,
       },
-      success_url: `${appUrl}/portal?paid=1&session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${appUrl}/portal/invoices?paid=1&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appUrl}/portal/invoices?cancelled=1`,
     });
 
