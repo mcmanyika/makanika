@@ -50,12 +50,60 @@ function getStripe() {
     }
     return new stripe_1.default(secretKey, { apiVersion: "2025-02-24.acacia" });
 }
-/** Public site URL for Stripe Checkout redirects (set APP_URL on deployed functions). */
-function getAppUrl() {
+const PRODUCTION_APP_HOST = "makanika-oqw5.vercel.app";
+function normalizeOrigin(url) {
+    try {
+        const withProtocol = /^https?:\/\//i.test(url) ? url : `https://${url}`;
+        const parsed = new URL(withProtocol);
+        if (parsed.pathname !== "/" && parsed.pathname !== "")
+            return null;
+        return parsed.origin;
+    }
+    catch (_a) {
+        return null;
+    }
+}
+/** Allowed redirect origins for Stripe Checkout (client appUrl + APP_URL env). */
+function isAllowedAppOrigin(origin) {
+    var _a, _b, _c;
+    const host = new URL(origin).hostname.toLowerCase();
+    const envOrigin = ((_a = process.env.APP_URL) === null || _a === void 0 ? void 0 : _a.trim())
+        ? normalizeOrigin(process.env.APP_URL)
+        : null;
+    if (envOrigin === origin)
+        return true;
+    for (const entry of (_c = (_b = process.env.ALLOWED_APP_URLS) === null || _b === void 0 ? void 0 : _b.split(",")) !== null && _c !== void 0 ? _c : []) {
+        const allowed = normalizeOrigin(entry.trim());
+        if (allowed === origin)
+            return true;
+    }
+    if (host === PRODUCTION_APP_HOST)
+        return true;
+    if (host === "localhost" || host === "127.0.0.1")
+        return true;
+    if (host.endsWith(".vercel.app") && host.startsWith("makanika"))
+        return true;
+    return false;
+}
+/** Public site URL for Stripe Checkout redirects. */
+function resolveAppUrl(clientAppUrl) {
     var _a;
-    const raw = (_a = process.env.APP_URL) === null || _a === void 0 ? void 0 : _a.trim();
-    if (raw)
-        return raw.replace(/\/$/, "");
+    const clientOrigin = (clientAppUrl === null || clientAppUrl === void 0 ? void 0 : clientAppUrl.trim())
+        ? normalizeOrigin(clientAppUrl)
+        : null;
+    if (clientOrigin && isAllowedAppOrigin(clientOrigin)) {
+        return clientOrigin;
+    }
+    if (clientOrigin) {
+        functions.logger.warn("Rejected client appUrl for Stripe redirect", {
+            clientOrigin,
+        });
+    }
+    const envOrigin = ((_a = process.env.APP_URL) === null || _a === void 0 ? void 0 : _a.trim())
+        ? normalizeOrigin(process.env.APP_URL)
+        : null;
+    if (envOrigin)
+        return envOrigin;
     functions.logger.warn("APP_URL is not set; Stripe Checkout will redirect to http://localhost:3000");
     return "http://localhost:3000";
 }
@@ -123,7 +171,7 @@ exports.createStripeCheckoutSession = functions.https.onCall(async (request) => 
     if (!request.auth) {
         throw new functions.https.HttpsError("unauthenticated", "Sign in required");
     }
-    const { invoiceId, shopId } = request.data;
+    const { invoiceId, shopId, appUrl: clientAppUrl } = request.data;
     if (!invoiceId || !shopId) {
         throw new functions.https.HttpsError("invalid-argument", "Missing invoiceId or shopId");
     }
@@ -132,7 +180,7 @@ exports.createStripeCheckoutSession = functions.https.onCall(async (request) => 
         throw new functions.https.HttpsError("permission-denied", "Invoice shop mismatch");
     }
     const stripe = getStripe();
-    const appUrl = getAppUrl();
+    const appUrl = resolveAppUrl(clientAppUrl);
     const session = await stripe.checkout.sessions.create({
         mode: "payment",
         payment_method_types: ["card"],

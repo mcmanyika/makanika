@@ -8,6 +8,7 @@ import { getRedirectForRole } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { isFirebaseConfigured } from "@/lib/firebase/config";
+import { SiteFooter } from "@/components/layout/SiteFooter";
 
 function LoginForm() {
   const { signIn, user, loading: authLoading } = useAuth();
@@ -122,10 +123,13 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
-      <Suspense fallback={<div className="text-slate-500">Loading...</div>}>
-        <LoginForm />
-      </Suspense>
+    <div className="flex min-h-screen flex-col bg-slate-50">
+      <div className="flex flex-1 items-center justify-center px-4 py-8">
+        <Suspense fallback={<div className="text-slate-500">Loading...</div>}>
+          <LoginForm />
+        </Suspense>
+      </div>
+      <SiteFooter />
     </div>
   );
 }

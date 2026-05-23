@@ -14,6 +14,7 @@ import { formatCurrency, formatDate, INVOICE_STATUS_LABELS, toDate } from "@/lib
 import { httpsCallable } from "firebase/functions";
 import { getFirebaseFunctions, isFirebaseConfigured } from "@/lib/firebase/config";
 import { getCallableErrorMessage } from "@/lib/firebase/callableError";
+import { getClientAppUrl } from "@/lib/appUrl";
 import { Invoice } from "@/types";
 
 export default function CustomerInvoicesPage() {
@@ -45,7 +46,11 @@ export default function CustomerInvoicesPage() {
         getFirebaseFunctions(),
         "createStripeCheckoutSession"
       );
-      const result = await createCheckout({ invoiceId, shopId });
+      const result = await createCheckout({
+        invoiceId,
+        shopId,
+        appUrl: getClientAppUrl(),
+      });
       const data = result.data as { url?: string };
       if (data?.url) {
         window.location.href = data.url;

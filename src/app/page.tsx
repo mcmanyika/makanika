@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { Calendar, Wrench, Shield, CreditCard, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { SiteFooter } from "@/components/layout/SiteFooter";
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white">
+    <div className="flex min-h-screen flex-col bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white">
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
         <div className="flex items-center gap-2">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 font-bold text-lg">
@@ -79,6 +80,7 @@ export default function HomePage() {
           ))}
         </div>
       </main>
+      <SiteFooter variant="dark" />
     </div>
   );
 }

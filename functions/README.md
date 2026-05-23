@@ -6,7 +6,7 @@ Server-side Stripe integration. **Never expose `STRIPE_SECRET_KEY` on the fronte
 
 | Function | Type | Description |
 |----------|------|-------------|
-| `createStripeCheckoutSession` | Callable | Customer portal — Stripe Checkout URL |
+| `createStripeCheckoutSession` | Callable | Customer portal — Stripe Checkout URL (uses `appUrl` from browser + `APP_URL` env) |
 | `createStripePaymentLink` | Callable | Admin — shareable payment link |
 | `stripeWebhook` | HTTP | Updates `invoices` and `payments` on successful payment |
 
@@ -69,7 +69,7 @@ Set on deployed functions (Firebase Console → Functions → environment variab
 APP_URL=https://makanika-oqw5.vercel.app
 ```
 
-Without this, customers return to `http://localhost:3000` after paying.
+The callable also accepts `appUrl` from the browser (`window.location.origin` on Vercel). Redeploy functions after changing redirect logic.
 
 Also set in Vercel: `NEXT_PUBLIC_APP_URL=https://makanika-oqw5.vercel.app`
 

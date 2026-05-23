@@ -18,10 +18,59 @@ function getStripe(): Stripe {
   return new Stripe(secretKey, { apiVersion: "2025-02-24.acacia" });
 }
 
-/** Public site URL for Stripe Checkout redirects (set APP_URL on deployed functions). */
-function getAppUrl(): string {
-  const raw = process.env.APP_URL?.trim();
-  if (raw) return raw.replace(/\/$/, "");
+const PRODUCTION_APP_HOST = "makanika-oqw5.vercel.app";
+
+function normalizeOrigin(url: string): string | null {
+  try {
+    const withProtocol = /^https?:\/\//i.test(url) ? url : `https://${url}`;
+    const parsed = new URL(withProtocol);
+    if (parsed.pathname !== "/" && parsed.pathname !== "") return null;
+    return parsed.origin;
+  } catch {
+    return null;
+  }
+}
+
+/** Allowed redirect origins for Stripe Checkout (client appUrl + APP_URL env). */
+function isAllowedAppOrigin(origin: string): boolean {
+  const host = new URL(origin).hostname.toLowerCase();
+
+  const envOrigin = process.env.APP_URL?.trim()
+    ? normalizeOrigin(process.env.APP_URL)
+    : null;
+  if (envOrigin === origin) return true;
+
+  for (const entry of process.env.ALLOWED_APP_URLS?.split(",") ?? []) {
+    const allowed = normalizeOrigin(entry.trim());
+    if (allowed === origin) return true;
+  }
+
+  if (host === PRODUCTION_APP_HOST) return true;
+  if (host === "localhost" || host === "127.0.0.1") return true;
+  if (host.endsWith(".vercel.app") && host.startsWith("makanika")) return true;
+
+  return false;
+}
+
+/** Public site URL for Stripe Checkout redirects. */
+function resolveAppUrl(clientAppUrl?: string): string {
+  const clientOrigin = clientAppUrl?.trim()
+    ? normalizeOrigin(clientAppUrl)
+    : null;
+  if (clientOrigin && isAllowedAppOrigin(clientOrigin)) {
+    return clientOrigin;
+  }
+  if (clientOrigin) {
+    functions.logger.warn("Rejected client appUrl for Stripe redirect", {
+      clientOrigin,
+    });
+  }
+
+  const envOrigin = process.env.APP_URL?.trim()
+    ? normalizeOrigin(process.env.APP_URL)
+    : null;
+  if (envOrigin) return envOrigin;
+
   functions.logger.warn(
     "APP_URL is not set; Stripe Checkout will redirect to http://localhost:3000"
   );
@@ -112,9 +161,10 @@ export const createStripeCheckoutSession = functions.https.onCall(
       throw new functions.https.HttpsError("unauthenticated", "Sign in required");
     }
 
-    const { invoiceId, shopId } = request.data as {
+    const { invoiceId, shopId, appUrl: clientAppUrl } = request.data as {
       invoiceId: string;
       shopId: string;
+      appUrl?: string;
     };
 
     if (!invoiceId || !shopId) {
@@ -127,7 +177,7 @@ export const createStripeCheckoutSession = functions.https.onCall(
     }
 
     const stripe = getStripe();
-    const appUrl = getAppUrl();
+    const appUrl = resolveAppUrl(clientAppUrl);
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",

@@ -8,6 +8,7 @@ import { getRedirectForRole } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { isFirebaseConfigured } from "@/lib/firebase/config";
+import { SiteFooter } from "@/components/layout/SiteFooter";
 import { UserRole } from "@/types";
 
 export default function SignupPage() {
@@ -43,7 +44,8 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-8">
+    <div className="flex min-h-screen flex-col bg-slate-50">
+      <div className="flex flex-1 items-center justify-center px-4 py-8">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Create your account</CardTitle>
@@ -145,6 +147,8 @@ export default function SignupPage() {
           </p>
         </CardContent>
       </Card>
+      </div>
+      <SiteFooter />
     </div>
   );
 }

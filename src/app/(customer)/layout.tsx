@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { Calendar } from "lucide-react";
 import { CustomerSidebar } from "@/components/layout/CustomerSidebar";
+import { SiteFooter } from "@/components/layout/SiteFooter";
 import { Button } from "@/components/ui/Button";
 import { CustomerNotificationsBell } from "@/components/notifications/CustomerNotificationsBell";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
@@ -20,7 +21,7 @@ export default function CustomerLayout({
       <CustomerDataProvider>
         <div className="min-h-screen bg-slate-50">
           <CustomerSidebar />
-          <main className="lg:pl-16">
+          <main className="flex min-h-screen flex-col lg:pl-16">
             <div className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-slate-200 bg-white/95 px-4 py-2 backdrop-blur supports-[backdrop-filter]:bg-white/80 sm:px-6 lg:px-8">
               <Link href="/portal/appointments" className="lg:hidden">
                 <Button type="button" size="sm">
@@ -41,7 +42,8 @@ export default function CustomerLayout({
             <Suspense fallback={null}>
               <StripeCheckoutReturn />
             </Suspense>
-            {children}
+            <div className="flex-1">{children}</div>
+            <SiteFooter />
           </main>
         </div>
       </CustomerDataProvider>
