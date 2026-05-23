@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { ExternalLink, Plus } from "lucide-react";
 import { AdminHeader } from "@/components/layout/AdminHeader";
 import { Button } from "@/components/ui/Button";
@@ -18,10 +19,30 @@ import {
   cloneLineItems,
   computeInvoiceTotals,
   createEmptyLineItem,
+  recalculateLineItem,
   sanitizeLineItemsForSave,
 } from "@/lib/invoiceLineItems";
+import {
+  formatJobsSummary,
+  getRepairOrderJobs,
+} from "@/lib/repairOrderJobs";
 import { formatCurrency, formatDate, INVOICE_STATUS_LABELS } from "@/lib/utils";
-import { EstimateLineItem, Invoice } from "@/types";
+import { EstimateLineItem, Invoice, RepairOrder } from "@/types";
+
+function repairOrderLabel(ro: RepairOrder): string {
+  const summary =
+    ro.description?.trim() ||
+    formatJobsSummary(getRepairOrderJobs(ro)) ||
+    "Repair order";
+  return `${ro.orderNumber} — ${summary.slice(0, 50)}`;
+}
+
+function isRepairOrderInvoiced(
+  ro: RepairOrder,
+  invoicedRepairOrderIds: Set<string>
+): boolean {
+  return Boolean(ro.invoiceId) || invoicedRepairOrderIds.has(ro.id);
+}
 import { httpsCallable } from "firebase/functions";
 import { getFirebaseFunctions, isFirebaseConfigured } from "@/lib/firebase/config";
 
@@ -53,8 +74,22 @@ export default function InvoicesPage() {
   const [paymentMsg, setPaymentMsg] = useState("");
   const [selected, setSelected] = useState<Invoice | null>(null);
 
-  const customerOrders = repairOrders.filter(
-    (ro) => ro.customerId === customerId && !ro.invoiceId
+  const invoicedRepairOrderIds = useMemo(
+    () => new Set(invoices.map((inv) => inv.repairOrderId)),
+    [invoices]
+  );
+
+  const customerRepairOrders = useMemo(() => {
+    if (!customerId) return [];
+    return repairOrders.filter((ro) => ro.customerId === customerId);
+  }, [repairOrders, customerId]);
+
+  const customerOrders = useMemo(
+    () =>
+      customerRepairOrders.filter(
+        (ro) => !isRepairOrderInvoiced(ro, invoicedRepairOrderIds)
+      ),
+    [customerRepairOrders, invoicedRepairOrderIds]
   );
 
   const totals = useMemo(() => {
@@ -72,6 +107,20 @@ export default function InvoicesPage() {
     if (estimate?.lineItems?.length) {
       setLineItems(cloneLineItems(estimate.lineItems));
       setTax(String(estimate.tax));
+      return;
+    }
+    if (order) {
+      const jobs = getRepairOrderJobs(order).filter((j) => j.description.trim());
+      if (jobs.length) {
+        setLineItems(
+          jobs.map((j) =>
+            recalculateLineItem(createEmptyLineItem("labor"), {
+              description: j.description.trim(),
+            })
+          )
+        );
+        setTax("");
+      }
     }
   }, [repairOrderId, repairOrders, estimates]);
 
@@ -314,12 +363,33 @@ export default function InvoicesPage() {
                         <option value="">Select repair order</option>
                         {customerOrders.map((ro) => (
                           <option key={ro.id} value={ro.id}>
-                            {ro.orderNumber} — {ro.description.slice(0, 40)}
+                            {repairOrderLabel(ro)}
                           </option>
                         ))}
                       </select>
+                      {customerId && customerRepairOrders.length === 0 && (
+                        <p className="mt-1 text-xs text-amber-700">
+                          No repair orders for this customer.{" "}
+                          <Link
+                            href="/repair-orders"
+                            className="font-medium underline"
+                          >
+                            Create a repair order
+                          </Link>{" "}
+                          first.
+                        </p>
+                      )}
+                      {customerId &&
+                        customerRepairOrders.length > 0 &&
+                        customerOrders.length === 0 && (
+                          <p className="mt-1 text-xs text-amber-700">
+                            All repair orders for this customer already have an
+                            invoice.
+                          </p>
+                        )}
                       <p className="mt-1 text-xs text-slate-500">
-                        Loads line items from an approved estimate when available.
+                        Prefills line items from the linked estimate or repair
+                        order jobs when available.
                       </p>
                     </div>
                   </div>

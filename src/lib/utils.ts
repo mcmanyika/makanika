@@ -79,7 +79,7 @@ export const REPAIR_ORDER_STATUSES: RepairOrderStatus[] = [
 export const REPAIR_STATUS_LABELS: Record<RepairOrderStatus, string> = {
   received: "Received",
   diagnosing: "Diagnosing",
-  waiting_approval: "Waiting Approval",
+  waiting_approval: "Pending estimate",
   in_progress: "In Progress",
   completed: "Completed",
   ready_for_pickup: "Ready for Pickup",

@@ -54,7 +54,7 @@ export default function RepairOrdersPage() {
   const [editJobs, setEditJobs] = useState<RepairOrderJob[]>([]);
   const [customerConcerns, setCustomerConcerns] = useState("");
   const [mechanicName, setMechanicName] = useState("");
-  const [status, setStatus] = useState<RepairOrderStatus>("waiting_approval");
+  const [status, setStatus] = useState<RepairOrderStatus>("received");
   const [submitting, setSubmitting] = useState(false);
   const [savingJobs, setSavingJobs] = useState(false);
   const [error, setError] = useState("");
@@ -125,7 +125,7 @@ export default function RepairOrdersPage() {
   const resetCreateForm = () => {
     setCustomerId("");
     setVehicleId("");
-    setJobs([createEmptyJob("waiting_approval")]);
+    setJobs([createEmptyJob("received")]);
     setCustomerConcerns("");
     setMechanicName("");
     setStatus("received");

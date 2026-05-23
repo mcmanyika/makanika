@@ -224,7 +224,8 @@ export default function EstimatesPage() {
               <CardHeader>
                 <CardTitle>New estimate</CardTitle>
                 <p className="text-sm text-slate-500">
-                  Customer must approve before work is billed on an invoice.
+                  Optional: customers can review estimates in the portal. Invoicing
+                  does not require customer approval.
                 </p>
               </CardHeader>
               <CardContent>
